@@ -71,6 +71,20 @@ private struct _CardListView: View {
             }
             .scrollContentBackground(.hidden)
             .navigationTitle("Card List")
+            .refreshable {
+                viewModel.fetch()
+            }
+            .alert("Error", isPresented: .constant(viewModel.isError)) {
+                Button("OK") { }
+            } message: {
+                Text(viewModel.errorMessage ?? "Unknown error, please retry later")
+            }
+            .overlay {
+                if (viewModel.isLoading && !viewModel.isError) {
+                    ProgressView("Fetching data, please wait...")
+                              .progressViewStyle(CircularProgressViewStyle(tint: .accentColor))
+                }
+            }
         }
     }
 }

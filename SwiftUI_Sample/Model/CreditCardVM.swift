@@ -9,6 +9,7 @@ import Foundation
 
 class CreditCardVM: ObservableObject {
     @Published var creditCards: [UICreditCard] = []
+    @Published var isLoading = false
     @Published var isError = false
     @Published var errorMessage: String?
     
@@ -17,17 +18,24 @@ class CreditCardVM: ObservableObject {
             return
         }
         
+        isLoading = true
         URLSession.shared.dataTask(with: url) { data, _, error in
             if let error = error {
-                self.isError = true
-                self.errorMessage = error.localizedDescription
+                DispatchQueue.main.async {
+                    self.isError = true
+                    self.errorMessage = error.localizedDescription
+                    self.isLoading = false
+                }
                 print(error.localizedDescription)
                 return
             }
             
             guard let data = data else {
-                self.isError = true
-                self.errorMessage = "No data found, please try again later"
+                DispatchQueue.main.async {
+                    self.isError = true
+                    self.errorMessage = "No data found, please try again later"
+                    self.isLoading = false
+                }
                 return
             }
             
@@ -42,10 +50,14 @@ class CreditCardVM: ObservableObject {
                     self.creditCards = response.map { UICreditCard(from: $0) }
                     self.isError = false
                     self.errorMessage = nil
+                    self.isLoading = false
                 }
             } catch {
-                self.isError = true
-                self.errorMessage = error.localizedDescription
+                DispatchQueue.main.async {
+                    self.isError = true
+                    self.errorMessage = error.localizedDescription
+                    self.isLoading = false
+                }
                 print(error.localizedDescription)
             }
         }.resume()

@@ -21,7 +21,7 @@ struct CreditCardRow: View {
     }
     
     var cardIndex: Int {
-        viewModel.creditCards.firstIndex(where: { $0.id == card.id })!
+        viewModel.creditCards.firstIndex(where: { $0.id == card.id }) ?? 0
      }
     
     var body: some View {
