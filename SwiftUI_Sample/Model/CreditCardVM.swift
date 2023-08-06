@@ -8,7 +8,9 @@
 import Foundation
 
 class CreditCardVM: ObservableObject {
-    @Published var creditCards: [CreditCard] = []
+    @Published var creditCards: [UICreditCard] = []
+    @Published var isError = false
+    @Published var errorMessage: String?
     
     func fetch() {
         guard let url = URL(string: "https://random-data-api.com/api/v2/credit_cards?size=100") else {
@@ -17,11 +19,15 @@ class CreditCardVM: ObservableObject {
         
         URLSession.shared.dataTask(with: url) { data, _, error in
             if let error = error {
+                self.isError = true
+                self.errorMessage = error.localizedDescription
                 print(error.localizedDescription)
                 return
             }
             
             guard let data = data else {
+                self.isError = true
+                self.errorMessage = "No data found, please try again later"
                 return
             }
             
@@ -33,9 +39,13 @@ class CreditCardVM: ObservableObject {
                 
                 let response = try decoder.decode([CreditCard].self, from: data)
                 DispatchQueue.main.async {
-                    self.creditCards = response
+                    self.creditCards = response.map { UICreditCard(from: $0) }
+                    self.isError = false
+                    self.errorMessage = nil
                 }
             } catch {
+                self.isError = true
+                self.errorMessage = error.localizedDescription
                 print(error.localizedDescription)
             }
         }.resume()
