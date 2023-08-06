@@ -9,7 +9,7 @@ import SwiftUI
 
 struct CardListView: View {
     @StateObject var viewModel = CreditCardVM()
-
+    
     var body: some View {
         _CardListView(viewModel: viewModel)
             .onAppear {
@@ -21,25 +21,52 @@ struct CardListView: View {
 private struct _CardListView: View {
     @ObservedObject var viewModel: CreditCardVM
     @State private var showSavedOnly = false
+    @State private var groupByType = false
     
     var filteredList: [UICreditCard] {
         viewModel.creditCards.filter { card in
             (!showSavedOnly || card.isSaved)
         }
     }
-
+    
+    var cardMap: [String : [UICreditCard]] {
+        return filteredList.reduce(into: [String : [UICreditCard]]()) { result, card in
+            var list = result[card.type] ?? [UICreditCard]()
+            list.append(card)
+            result[card.type] = list
+        }
+    }
+    
     var body: some View {
         NavigationView {
             List {
                 Toggle(isOn: $showSavedOnly) {
                     Text("Saved only")
                 }
+                Toggle(isOn: $groupByType) {
+                    Text("Group by type")
+                }
                 
-                ForEach(filteredList) { card in
-                    CreditCardRow(card: card)
-                        .environmentObject(viewModel)
-                        .listRowSeparator(.hidden)
-                        .listRowInsets(.none)
+                if (groupByType) {
+                    ForEach(Array(cardMap.keys).sorted(by: <), id: \.self) { type in
+                        Section {
+                            ForEach(cardMap[type]!) { card in
+                                CreditCardRow(card: card)
+                                    .environmentObject(viewModel)
+                                    .listRowSeparator(.hidden)
+                                    .listRowInsets(.none)
+                            }
+                        } header: {
+                            Text(type)
+                        }
+                    }
+                } else {
+                    ForEach(filteredList) { card in
+                        CreditCardRow(card: card)
+                            .environmentObject(viewModel)
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(.none)
+                    }
                 }
             }
             .scrollContentBackground(.hidden)
